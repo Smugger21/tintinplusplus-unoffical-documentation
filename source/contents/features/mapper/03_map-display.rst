@@ -35,6 +35,43 @@ Rather than use this approach, we can get much better behavior by using the foll
 
 This redisplays the file every .25 seconds, which on my system seems to be the fastest refresh rate that there is nearly no noticeable lag between my movement in TinTin and the map being updated.  Additionally, it writes a small tintin file, which contains two variable definitions - the number of columns and number lines in the window displaying the map.
 
+--- Updated Script ---
+I recommend an update to the Bash file script here. Insted it should look at file modification changes.
+This also includes a count time just incase. This seems to work best for me, I am still working on a better approach, but I may need to use python instead of just bash.
+
+#!/bin/bash
+
+MAP_FILE='map.txt'
+MAP_SIZE='map_size.tin'
+
+function displayMAP() {
+  echo \#var MAP_ROWS $(tput cols)\; > $MAP_SIZE
+  echo \#var MAP_LINES $(tput lines)\; >> $MAP_SIZE
+  clear
+  cat $MAP_FILE
+  
+}
+
+d1=""; 
+COUNTER=0;
+while true; do
+  d2=$(stat -c %Y ./map.txt); 
+  if [ "$d2" != "$d1" ]; then 
+    COUNTER=0;
+    displayMAP;
+    d2=$(stat -c %Y ./map.txt); 
+    d1="$d2";
+  fi;
+  let COUNTER=COUNTER+1
+  if [ $COUNTER -gt 250 ]; then
+    COUNTER=0;
+    displayMAP;
+    d2=$(stat -c %Y ./map.txt); 
+    d1="$d2";
+  fi;
+done;
+--- End Update ---
+
 In our map event hook, we can then have it write the perfectly sized map, by simply reading this tintin file and using those values to update the size of the map that is displayed::
 
     #event {MAP ENTER ROOM} {
